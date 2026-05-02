@@ -6,26 +6,27 @@ When working on Next.js, Remix, or React SPA projects, apply these SEO rules aut
 
 ## Trigger on
 
-- Any file in `app/`, `pages/`, `app/routes/`, or `src/pages/` (page, layout, and route files — not generic components)
+- Files in `app/`, `pages/`, `app/routes/`, or `src/pages/` (page, layout, and route files — not generic UI components)
 - User mentions: SEO, meta tags, Open Graph, sitemap, robots.txt, structured data, hreflang, ranking, discoverability, social previews
-- Page/layout/route files missing metadata exports
+- Page/layout/route files missing metadata exports with no inherited coverage
 
 ## Framework detection
 
 Read `package.json`:
-- `next` → Next.js
+- `next` → Next.js (`app/` = app router, `pages/` = pages router)
 - `@remix-run/react` → Remix
-- `react` + `vite` or `react-scripts` → React SPA (no SSR)
+- `react` + `vite`/`react-scripts` → React SPA (no SSR)
 
 ## Critical issues — fix without asking
 
-- Public page missing `<title>` or `meta description`
-- Next.js page/layout missing `metadata` export or `generateMetadata`
-- Remix route missing `export const meta`
-- `<img>` without `alt`
-- No `robots.txt` in production
-- No canonical on duplicate-content pages
-- React SPA (no SSR) on SEO-critical site without crawlability warning
+These represent genuine indexing risk:
+
+- Public page missing `<title>` or `meta description`, with no coverage from a parent layout
+- Next.js page/layout missing `metadata` or `generateMetadata` AND no ancestor layout providing coverage
+- Remix route missing `export const meta` AND no root defaults covering it
+- Informational `<img>` missing `alt` (decorative images with `alt=""` are correct — do not flag)
+- No canonical on pages with real duplicate content risk
+- React SPA on SEO-critical public site without acknowledging rendering risk
 - i18n site missing `hreflang` alternate links
 
 ## Enhancements — show example, ask before applying
@@ -33,8 +34,9 @@ Read `package.json`:
 - Missing Open Graph / Twitter card tags
 - Missing JSON-LD structured data
 - No sitemap
-- `next/head` in app router (migrate to metadata API)
-- Raw `<img>` instead of `next/image`
+- Missing `robots.txt` (crawl is allowed by default; absence is not a blocker)
+- `next/head` in app router (native metadata API is preferred, not required)
+- `next/image` instead of raw `<img>` (performance improvement, not an SEO requirement)
 - `robots.txt` missing sitemap pointer
 
 ---
@@ -42,24 +44,23 @@ Read `package.json`:
 ## Next.js — app router
 
 ```tsx
-// Static metadata
+// Static
 export const metadata: Metadata = {
-  title: 'Page Title | Site',
+  title: 'Page | Site',
   description: 'Under 160 chars.',
   alternates: { canonical: 'https://acme.com/page' },
   openGraph: {
-    title: 'Page Title | Site',
-    description: 'Under 160 chars.',
+    title: 'Page | Site',
     images: [{ url: 'https://acme.com/og.png', width: 1200, height: 630 }],
   },
   twitter: { card: 'summary_large_image' },
 }
 
-// Dynamic metadata — use same fetch as page component (Next.js deduplicates)
+// Dynamic — reuse the same fetch as the page component (Next.js deduplicates)
 export async function generateMetadata({ params }): Promise<Metadata> {
   const data = await getData(params.slug)
   return {
-    title: data.title,
+    title: `${data.title} | Site`,
     description: data.excerpt,
     alternates: { canonical: `https://acme.com/${params.slug}` },
     openGraph: { title: data.title, images: [{ url: data.image }] },
@@ -74,28 +75,8 @@ export const metadata: Metadata = {
 }
 ```
 
-Sitemap:
-```ts
-// app/sitemap.ts
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const posts = await getAllPosts()
-  return [
-    { url: 'https://acme.com', changeFrequency: 'daily', priority: 1 },
-    ...posts.map(p => ({ url: `https://acme.com/blog/${p.slug}`, lastModified: p.updatedAt })),
-  ]
-}
-```
-
-robots.txt:
-```ts
-// app/robots.ts
-export default function robots(): MetadataRoute.Robots {
-  return {
-    rules: { userAgent: '*', allow: '/', disallow: ['/admin/'] },
-    sitemap: 'https://acme.com/sitemap.xml',
-  }
-}
-```
+Sitemap: `app/sitemap.ts` returning `MetadataRoute.Sitemap`.
+robots.txt: `app/robots.ts` returning `MetadataRoute.Robots`.
 
 ## Remix
 
@@ -113,8 +94,8 @@ export const meta: MetaFunction<typeof loader> = ({ data, params }) => [
 ## React SPA
 
 ```tsx
-// npm install react-helmet-async
 import { Helmet } from 'react-helmet-async'
+// Wrap root: <HelmetProvider><App /></HelmetProvider>
 
 <Helmet>
   <title>{title} | Site</title>
@@ -126,16 +107,18 @@ import { Helmet } from 'react-helmet-async'
 </Helmet>
 ```
 
-Always warn on SEO-critical SPAs: Google renders JS but with deferred timing, limited resources, and weaker guarantees for dynamic meta tags. Next.js or Remix provide reliable server-rendered metadata.
+**Rendering risk on SEO-critical SPAs:** Google renders JavaScript but with deferred timing, limited resources, and weaker guarantees for dynamic meta tags. Next.js or Remix provide reliable server-rendered metadata. react-helmet-async helps with social previews but does not eliminate the rendering reliability gap.
 
 ## JSON-LD
+
+JSON-LD belongs in the **page component** as a `<script>` tag. It cannot be emitted from `generateMetadata` — that function only controls `<head>` meta elements.
 
 ```tsx
 <script
   type="application/ld+json"
   dangerouslySetInnerHTML={{ __html: JSON.stringify({
     '@context': 'https://schema.org',
-    '@type': 'Article', // or Product, FAQPage, Organization, etc.
+    '@type': 'Article', // or Product, FAQPage, Organization+WebSite, Event, Recipe
     headline: title,
     description: excerpt,
     author: { '@type': 'Person', name: authorName },
@@ -145,12 +128,12 @@ Always warn on SEO-critical SPAs: Google renders JS but with deferred timing, li
 />
 ```
 
-Schema type guide: `/blog/[slug]` → Article, `/products/[id]` → Product, `/faq` → FAQPage, `/` → Organization + WebSite.
+Schema types: `/blog/[slug]` → Article, `/products/[id]` → Product, `/faq` → FAQPage, `/` → Organization + WebSite.
 
-## i18n — hreflang
+## i18n hreflang
 
 ```tsx
-// Next.js generateMetadata
+// Next.js generateMetadata — for alternates/hreflang (not JSON-LD)
 alternates: {
   canonical: `https://acme.com/${locale}/page`,
   languages: {
@@ -161,4 +144,4 @@ alternates: {
 },
 ```
 
-Every locale variant must link to all others (reciprocal). Always include `x-default`.
+Every locale variant must link to all others (reciprocal). Always include `x-default`. Missing hreflang causes incorrect locale disambiguation and wrong-region serving — not flagged as a duplicate-content penalty by Google.

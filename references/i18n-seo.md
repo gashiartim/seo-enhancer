@@ -2,7 +2,7 @@
 
 ## Why i18n SEO Matters
 
-Without hreflang, Google may treat your `/en/about` and `/fr/about` as duplicate content and penalize both. Hreflang tells Google: "these pages are translations of each other, serve the right one to the right user."
+Without hreflang, Google cannot reliably distinguish locale variants from one another. It may cluster `/en/about` and `/fr/about` together and serve the wrong regional page to users — or exclude variants from locale-specific search results. Hreflang tells Google: "these pages are translations of each other, serve the right one to the right user."
 
 ## hreflang Rules
 
@@ -194,12 +194,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
 | Mistake | Why it's a problem | Fix |
 |---------|-------------------|-----|
-| No hreflang at all | Google treats locales as duplicates, penalizes all | Add hreflang to every locale variant |
+| No hreflang at all | Google cannot distinguish locale variants; may serve wrong region or exclude variants | Add hreflang to every locale variant |
 | hreflang not reciprocal | Google ignores unreciprocated hreflang | Every locale must link to all others |
 | Missing `x-default` | No fallback for users whose locale isn't covered | Point `x-default` to your default locale |
 | Canonical points to different locale | Contradicts hreflang, Google drops it | Canonical must match the current page's locale URL |
 | Using query params for locale (`?lang=fr`) | Less reliable for Google than path-based (`/fr/`) | Prefer path-based locale routing |
-| Same content, different locale URL, no hreflang | Duplicate content penalty | Add hreflang or consolidate |
+| Same content, different locale URL, no hreflang | Google may cluster variants incorrectly and serve the wrong locale | Add hreflang or consolidate |
 
 ## Detecting i18n Setup
 

@@ -251,7 +251,7 @@ Auto-detect from route/file/component signals:
 | `/events/[id]` | `Event` |
 | Catch-all / ambiguous | Ask the user |
 
-Inject via `<script type="application/ld+json">` — works in all frameworks.
+Inject via `<script type="application/ld+json">` in the **page component** — works in all frameworks. In Next.js, JSON-LD cannot be emitted from `generateMetadata`; that function only controls `<head>` meta elements.
 
 ---
 
@@ -341,7 +341,7 @@ Always check `package.json` first. Prefer native APIs over third-party deps.
 
 **Images**
 - [ ] Informational `<img>` have descriptive `alt` text; decorative `<img>` have `alt=""`
-- [ ] `next/image` used in Next.js
+- [ ] `next/image` used in Next.js (performance improvement — not an SEO requirement)
 
 **Crawlability**
 - [ ] `sitemap.xml` exists and linked in `robots.txt`

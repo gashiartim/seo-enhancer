@@ -190,5 +190,6 @@ export const meta: MetaFunction = () => [
 When auditing a Remix project, look for route files under `app/routes/` that:
 - Render public-facing content (not `_index`, not `api.`, not `$`)
 - Are missing an `export const meta` function
+- Have no inherited metadata coverage from a root route
 
-These are Critical findings — add `meta` exports for each.
+A missing local `meta` export is only a **Critical** finding when the route has no effective metadata coverage. If the root route (`root.tsx`) exports a `meta` function with sensible defaults — title template, description, robots — child routes may be adequately covered. Flag the gap only when the page would render with a missing or empty `<title>` and no `meta description`.

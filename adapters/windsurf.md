@@ -4,64 +4,68 @@
 
 ## SEO rules for Next.js, Remix, and React SPAs
 
-When working in a web project, apply these SEO rules automatically when:
-- Editing page components, route files, or layout files
-- The user mentions SEO, meta tags, rankings, sitemaps, Open Graph, or social previews
-- You see a page/layout file missing metadata exports
+Apply these rules when editing page, route, or layout files in a web project, or when the user mentions SEO, meta tags, rankings, sitemaps, Open Graph, Twitter cards, structured data, hreflang, or social previews.
 
-### Detect framework from `package.json`
+### Detect framework
 
-- `next` → Next.js (check `app/` vs `pages/` for router version)
+Check `package.json` deps:
+- `next` → Next.js. `app/` = app router, `pages/` = pages router
 - `@remix-run/react` → Remix
-- `react` + `vite`/`react-scripts` → React SPA (client-side only)
-- `next-intl` / `[locale]` folder segments → i18n project, hreflang required
+- `react` + `vite` or `react-scripts` → React SPA (no SSR)
+- `next-intl` / `next-i18next` / `[locale]` path segments → i18n project
 
----
+### Audit — two tiers
 
-### Critical — fix immediately
+**Critical (fix immediately — genuine indexing risk):**
+- Public page with no `<title>` or `meta description`, with no coverage from a parent layout
+- Next.js page/layout missing `metadata` or `generateMetadata` AND no ancestor layout providing coverage
+- Remix route missing `export const meta` AND no inherited root defaults covering it
+- Informational `<img>` without `alt` — decorative images with `alt=""` are correct, do not flag
+- No `canonical` on pages with real duplicate content risk
+- React SPA on an SEO-critical public site with no acknowledgment of rendering risk
+- i18n site missing `hreflang` alternate links
 
-- Missing `<title>` or `meta description` on any public page
-- Next.js page/layout without `metadata` export or `generateMetadata`
-- Remix route without `export const meta`
-- `<img>` tags without `alt` attribute
-- No `robots.txt` file in production
-- No canonical URL on pages with duplicate content risk
-- React SPA on an SEO-critical site — add crawlability warning
-- i18n site with no hreflang alternate links
-
-### Enhancements — recommend + show code, ask before applying
-
-- Open Graph and Twitter card tags missing
-- JSON-LD structured data missing
+**Enhancement (show code example, ask before applying):**
+- Missing Open Graph / Twitter card tags
+- Missing JSON-LD structured data
 - No sitemap
-- `next/head` in app router (should be metadata API)
-- Raw `<img>` instead of `next/image`
+- Missing `robots.txt` (crawl is allowed by default; absence is not a blocker)
+- `next/head` in app router (native metadata API is preferred, not required)
+- `next/image` instead of raw `<img>` (performance improvement, not an SEO requirement)
 - `robots.txt` missing sitemap pointer
 
 ---
 
-### Implementations
+## Implementations
 
-**Next.js app router — static page:**
+**Next.js app router — static:**
 ```tsx
 export const metadata: Metadata = {
   title: 'Page | Site',
-  description: 'Description.',
+  description: 'Under 160 chars.',
   alternates: { canonical: 'https://acme.com/page' },
   openGraph: { title: 'Page | Site', images: [{ url: 'https://acme.com/og.png', width: 1200, height: 630 }] },
   twitter: { card: 'summary_large_image' },
 }
 ```
 
-**Next.js app router — dynamic page:**
+**Next.js app router — dynamic (reuse same fetch as page, Next.js deduplicates):**
 ```tsx
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const data = await getData(params.slug) // deduplicates with page fetch
+  const item = await getData(params.slug)
   return {
-    title: data.title,
+    title: item.title,
     alternates: { canonical: `https://acme.com/${params.slug}` },
-    openGraph: { title: data.title, images: [{ url: data.image }] },
+    openGraph: { title: item.title, images: [{ url: item.image }] },
   }
+}
+```
+
+**Next.js root layout:**
+```tsx
+export const metadata: Metadata = {
+  metadataBase: new URL('https://acme.com'),
+  title: { default: 'Site Name', template: '%s | Site Name' },
 }
 ```
 
@@ -81,7 +85,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 ```tsx
 export const meta: MetaFunction<typeof loader> = ({ data, params }) => [
   { title: `${data?.title} | Site` },
-  { name: 'description', content: data?.excerpt },
+  { name: 'description', content: data?.description },
   { tagName: 'link', rel: 'canonical', href: `https://acme.com/${params.slug}` },
   { property: 'og:title', content: data?.title },
   { property: 'og:image', content: data?.image },
@@ -92,7 +96,7 @@ export const meta: MetaFunction<typeof loader> = ({ data, params }) => [
 **React SPA:**
 ```tsx
 import { Helmet } from 'react-helmet-async'
-// Wrap app root with <HelmetProvider>
+// Wrap root: <HelmetProvider><App /></HelmetProvider>
 <Helmet>
   <title>{title} | Site</title>
   <meta name="description" content={description} />
@@ -103,11 +107,13 @@ import { Helmet } from 'react-helmet-async'
 </Helmet>
 ```
 
-**JSON-LD:**
+**Rendering risk on SEO-critical SPAs:** Google renders JavaScript but with deferred timing, limited resources, and weaker guarantees for dynamic meta tags. Next.js or Remix provide reliable server-rendered metadata.
+
+**JSON-LD — inject in the page component, not in `generateMetadata`:**
 ```tsx
 <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
 ```
-Schema types: `Article` (blog), `Product` (ecommerce), `FAQPage` (FAQ), `Organization`+`WebSite` (homepage).
+Schema types: `Article` (blog), `Product` (ecommerce), `FAQPage`, `Organization`+`WebSite` (homepage).
 
 **i18n hreflang:**
 ```tsx
@@ -116,18 +122,19 @@ alternates: {
   languages: { 'x-default': 'https://acme.com/en/page', en: '...', fr: '...' },
 },
 ```
+Missing hreflang causes incorrect locale disambiguation and wrong-region serving.
 
 ---
 
-### Checklist
+## Checklist
 
 - [ ] `<title>` unique, under 60 chars
 - [ ] `meta description` under 160 chars
 - [ ] `canonical` on duplicate-content pages
 - [ ] OG: title, description, image, url, type
 - [ ] Twitter card tags present
-- [ ] JSON-LD with correct schema
-- [ ] Informational `<img>` have descriptive `alt`; decorative `<img>` use `alt=""`
+- [ ] JSON-LD in page component with correct schema type
+- [ ] Informational `<img>` have descriptive `alt`; decorative `<img>` have `alt=""`
 - [ ] `sitemap.xml` linked in `robots.txt`
 - [ ] `robots.txt` not blocking public routes
 - [ ] hreflang on every locale (if i18n project)
