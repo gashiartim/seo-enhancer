@@ -144,7 +144,7 @@ All locale variants must be reciprocal. Always include `x-default`.
 - [ ] `og:title`, `og:description`, `og:image`, `og:url`, `og:type`
 - [ ] `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`
 - [ ] JSON-LD with schema type matching page content
-- [ ] All `<img>` have meaningful `alt` (not empty, not "image")
+- [ ] Informational `<img>` have descriptive `alt`; decorative `<img>` use `alt=""` (empty, not missing)
 - [ ] `next/image` in Next.js projects
 - [ ] `sitemap.xml` exists and linked in `robots.txt`
 - [ ] `robots.txt` not blocking public routes

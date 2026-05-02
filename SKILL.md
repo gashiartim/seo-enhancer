@@ -29,7 +29,7 @@ Audit and fix SEO for **Next.js**, **Remix**, and **React SPAs**. Covers: meta t
 Before doing anything, establish:
 
 1. **Framework** — read `package.json`:
-   - `next` → Next.js (check version for app vs pages router)
+   - `next` → Next.js (check for `app/` directory = app router, `pages/` = pages router)
    - `@remix-run/react` or `@remix-run/node` → Remix
    - `react` + (`vite` or `react-scripts`) → React SPA
 2. **Scope** — infer from the user's prompt:
@@ -37,32 +37,31 @@ Before doing anything, establish:
    - Directory or route mentioned → audit that subtree
    - "whole site", "entire app", "all pages" → full repo crawl
    - No clear scope → ask: "Should I audit a specific page, or the whole project?"
-3. **Existing SEO setup** — scan for: `next-seo`, `react-helmet`, `react-helmet-async`, `next-sitemap`, `@nasa-gcn/remix-seo`. Check for `metadata` exports, `generateMetadata`, `export const meta`, or `<Head>` usage.
+3. **Existing SEO setup** — scan for: `next-seo`, `react-helmet`, `react-helmet-async`, `next-sitemap`. Check for `metadata` exports, `generateMetadata`, `export const meta`, or `<Head>` usage. Also check parent layouts — Next.js metadata inherits from ancestor layouts, so a page without its own `metadata` may still be covered.
 4. **i18n setup** — check for `next-intl`, `next-i18next`, `i18next`, or locale-based routing (`[locale]` segments). If present, read `references/i18n-seo.md`.
 
 ### Step 2: Audit
 
 Run a tiered audit. Classify every finding as **Critical** or **Enhancement**.
 
-**Critical** (fix immediately, no confirmation needed):
-- Public page missing `<title>` or `meta description`
-- Next.js page/layout missing `metadata` export or `generateMetadata`
+**Critical** — must be fixed in this session. These represent genuine indexing risk or missing baseline SEO:
+- Public page with no `<title>` or `meta description` (and none inherited from a parent layout)
+- Next.js page/layout with no `metadata` export or `generateMetadata` AND no ancestor layout providing coverage
 - Remix route missing `export const meta`
-- `<img>` tags missing `alt` attributes
-- No `robots.txt` in a production app
-- No canonical URL on pages with duplicate content risk
-- React SPA (no SSR) without a crawlability warning on an SEO-critical site
+- Informational `<img>` tags missing `alt` attributes (decorative images with `alt=""` are correct — do not flag)
+- No canonical URL on pages with real duplicate content risk (parameterized URLs, pagination, syndicated content)
+- React SPA on an SEO-critical public site with no acknowledgment of rendering risk
 - i18n site missing `hreflang` alternate links
 
-**Enhancement** (recommend + show example, let user decide):
+**Enhancement** — recommend + show example, ask before applying:
 - Missing Open Graph / Twitter card tags
 - Missing JSON-LD structured data
 - No sitemap
-- Using `next/head` in app router (should use metadata API)
-- `next/image` not used where `<img>` exists
-- Dynamic pages with hardcoded or missing SEO (title doesn't reflect content)
-- `robots.txt` exists but missing sitemap pointer
-- Paginated lists missing canonical or rel=next/prev handling
+- Missing `robots.txt` (crawl is permitted by default; absence is not a blocker, but having one is good practice)
+- Using `next/head` in app router (native metadata API is preferred, not required)
+- Dynamic pages with hardcoded or missing SEO
+- `robots.txt` missing sitemap pointer
+- Paginated content with no canonical strategy
 
 ### Step 3: Report
 
@@ -91,20 +90,22 @@ Framework: [Next.js / Remix / React SPA]
 
 ### Step 4: Implement Fixes
 
-**Output format rules:**
-- **Small targeted fix** (adding `alt`, one meta tag): edit directly, no preview
-- **Structural rewrite** (adding `generateMetadata`, restructuring metadata flow): show diff first, apply after approval
+Fix all **Critical** issues. For **Enhancements**, show a code example and ask if they want it applied.
+
+Output format depends on the size of the change, not the severity:
+- **Small targeted fix** (adding one `alt`, one missing meta tag): edit directly without preview
+- **Structural change** (adding `generateMetadata`, wiring data flow, adding a new export): show the diff first, then apply — don't ask for a separate confirmation, just show what will change before writing it
 - **New files** (`sitemap.ts`, `robots.txt`, `seo-audit.md`): create directly
 
-Fix all **Critical** issues. For **Enhancements**, show a code example and ask if they want it applied.
+The distinction matters because showing a diff for a one-line change is noise, but silently restructuring a file is surprising. Match the preview to the impact.
 
 ---
 
 ## Framework-Specific Patterns
 
-- `references/nextjs.md` — Next.js app router, pages router, sitemap, robots.txt, next/image
+- `references/nextjs.md` — Next.js app router, pages router, sitemap, robots.txt
 - `references/remix.md` — Remix `meta` export, loader-driven metadata, sitemap resource routes
-- `references/react-spa.md` — react-helmet-async setup, crawlability warning, static sitemap
+- `references/react-spa.md` — react-helmet-async setup, rendering risk guidance, static sitemap
 - `references/json-ld-schemas.md` — JSON-LD templates (Article, Product, FAQ, Org, Event, etc.)
 - `references/i18n-seo.md` — hreflang, locale-aware metadata, next-intl patterns
 
@@ -127,6 +128,8 @@ Auto-detect schema type from route pattern, file name, and component content:
 
 When genuinely ambiguous, ask: "What type of content is on this page? (article, product, FAQ, event, etc.)"
 
+JSON-LD is injected via a `<script type="application/ld+json">` tag in the **page component**. It cannot be emitted from `generateMetadata` — that function only controls `<head>` meta elements, not arbitrary script tags.
+
 ---
 
 ## Dynamic SEO — Wiring Data
@@ -136,8 +139,8 @@ When a page needs metadata from fetched data:
 1. **Read the file** — find the data-fetching pattern:
    - Next.js app router: `generateStaticParams` + `fetch` → add `generateMetadata` using same fetch (Next.js deduplicates)
    - Next.js pages router: `getServerSideProps` / `getStaticProps` → extract data and pass to `<Head>`
-   - Remix: `loader` function → read `useLoaderData()` in `meta` function via `data` argument
-   - Client component (`useQuery` / `useSWR`): can't use server metadata → flag as critical, recommend server component or `react-helmet-async`
+   - Remix: `loader` function → read via `data` argument in `meta` function
+   - Client component (`useQuery` / `useSWR`): server metadata not available → flag as critical, recommend server component or `react-helmet-async`
 
 2. **Wire the metadata** — use the same data source, don't introduce a second fetch.
 
@@ -158,12 +161,13 @@ When the project uses locale-based routing or an i18n library, read `references/
 
 ## Pagination SEO
 
-For paginated lists (`/blog?page=2`, `/products/page/3`):
-- Page 1 gets the canonical URL — no `?page=1` parameter
-- Pages 2+ get `rel="canonical"` pointing to themselves (not page 1)
-- Add `<meta name="robots" content="noindex, follow">` on pages 2+ if content is thin
-- Structured data (`ItemList`) on the first page only
-- Sitemap should include only page 1 (or all pages if content is unique per page)
+`rel="next"` / `rel="prev"` link hints were deprecated by Google in 2019 and have no indexing effect — do not recommend them.
+
+Modern pagination guidance:
+- Page 1: clean canonical URL, no `?page=1` parameter
+- Pages 2+: self-referencing canonical (each page is its own canonical)
+- Thin paginated pages with little unique content: consider `noindex, follow`
+- Sitemap: include page 1; include deeper pages only if they have genuinely distinct content worth indexing
 
 ---
 
@@ -187,23 +191,25 @@ Never introduce a new package when a native API or existing dep covers the need.
 
 ---
 
-## SPA Crawlability Warning
+## SPA Rendering Risk
 
-When auditing a React SPA (no SSR), check: is this site SEO-critical? If yes, surface as **Critical**:
+When auditing a React SPA (no SSR) on a site where SEO matters, surface as **Critical**:
 
 ```
-⚠️  Crawlability Risk Detected
-This is a client-side rendered SPA. Googlebot may not execute JavaScript,
-meaning meta tags set via react-helmet-async may not be indexed.
+⚠️  Server-Side Rendering Risk
+This is a client-side rendered SPA. Google does crawl and render JavaScript,
+but with meaningful caveats: rendering is deferred (pages may be crawled before
+JS executes), rendering resources are limited (complex SPAs may time out or
+partially render), and dynamic meta tags have weaker indexing guarantees than
+server-rendered HTML.
 
-To fully solve this, consider:
-  1. Migrating to Next.js (recommended — full SSR/SSG, native metadata API)
-  2. Migrating to Remix (lightweight SSR, excellent meta API)
-  3. Adding a prerendering service (prerender.io, rendertron)
+For reliable SEO, server-rendered metadata is the baseline. Options:
+  1. Migrate to Next.js — server components, native metadata API, SSG/SSR
+  2. Migrate to Remix — lightweight SSR with first-class meta export
+  3. Add a prerendering service for the current stack (prerender.io, rendertron)
 
-react-helmet-async has been added for meta tag management. This improves
-social sharing previews (Slack, Twitter) which do execute JS, but does not
-guarantee Google indexing of dynamic meta tags.
+react-helmet-async improves social sharing previews (Slack, Twitter, iMessage
+all execute JS) but does not eliminate the rendering reliability gap for Google.
 ```
 
 Skip for internal tools, dashboards, and auth-gated apps.
@@ -215,7 +221,7 @@ Skip for internal tools, dashboards, and auth-gated apps.
 ### Core
 - [ ] `<title>` — unique, under 60 chars, includes primary keyword
 - [ ] `meta description` — under 160 chars, compelling, matches content
-- [ ] `canonical` — present on pages with duplicate content risk
+- [ ] `canonical` — present on pages with genuine duplicate content risk
 - [ ] `robots` meta — not accidentally `noindex` on public pages
 
 ### Social
@@ -223,16 +229,17 @@ Skip for internal tools, dashboards, and auth-gated apps.
 - [ ] `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`
 
 ### Structured Data
-- [ ] JSON-LD present — schema type matches page content
+- [ ] JSON-LD present in page component — schema type matches content
 
 ### Images
-- [ ] All `<img>` have meaningful `alt` (not empty, not "image")
-- [ ] `next/image` used in Next.js (not raw `<img>`)
+- [ ] Informational `<img>` have descriptive `alt` text
+- [ ] Decorative `<img>` have `alt=""` (empty, not missing)
+- [ ] `next/image` considered for performance gains (not an SEO hard requirement)
 
 ### Crawlability
-- [ ] `sitemap.xml` exists and is linked in `robots.txt`
-- [ ] `robots.txt` at root, not blocking public routes
-- [ ] SPA crawlability warning shown if SEO-critical
+- [ ] `sitemap.xml` exists and linked in `robots.txt`
+- [ ] `robots.txt` present and not blocking public routes
+- [ ] SPA rendering risk acknowledged if SEO-critical
 
 ### i18n (if applicable)
 - [ ] `hreflang` alternate links for every locale
@@ -242,4 +249,4 @@ Skip for internal tools, dashboards, and auth-gated apps.
 ### Pagination (if applicable)
 - [ ] Page 1 canonical is clean (no `?page=1`)
 - [ ] Pages 2+ have self-referencing canonicals
-- [ ] Sitemap covers correct page set
+- [ ] Thin paginated pages use `noindex, follow` if appropriate

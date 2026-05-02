@@ -6,7 +6,7 @@ When working on Next.js, Remix, or React SPA projects, apply these SEO rules aut
 
 ## Trigger on
 
-- Any file in `app/`, `pages/`, `app/routes/`, `src/pages/`, or `src/components/`
+- Any file in `app/`, `pages/`, `app/routes/`, or `src/pages/` (page, layout, and route files — not generic components)
 - User mentions: SEO, meta tags, Open Graph, sitemap, robots.txt, structured data, hreflang, ranking, discoverability, social previews
 - Page/layout/route files missing metadata exports
 
@@ -126,7 +126,7 @@ import { Helmet } from 'react-helmet-async'
 </Helmet>
 ```
 
-Always warn: react-helmet alone does not solve Googlebot crawlability for SPAs. Recommend Next.js or Remix for SEO-critical sites.
+Always warn on SEO-critical SPAs: Google renders JS but with deferred timing, limited resources, and weaker guarantees for dynamic meta tags. Next.js or Remix provide reliable server-rendered metadata.
 
 ## JSON-LD
 

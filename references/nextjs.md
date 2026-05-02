@@ -212,23 +212,28 @@ Disallow: /api/
 Sitemap: https://acme.com/sitemap.xml
 ```
 
-## next/image for SEO
+## next/image
+
+`next/image` is a performance and UX improvement — automatic format conversion, lazy loading, layout shift prevention. It's not a direct SEO ranking factor, but it helps Core Web Vitals (LCP in particular) which are a ranking signal. Prefer it where practical, but don't treat raw `<img>` as an SEO error.
 
 ```tsx
-// Always use next/image — it enforces alt, handles lazy loading, and serves optimized formats
 import Image from 'next/image'
 
-// Good
-<Image src="/hero.jpg" alt="Hero image showing our product dashboard" width={1200} height={630} priority />
+// Informational image — descriptive alt required
+<Image src="/hero.jpg" alt="Product dashboard showing weekly sales overview" width={1200} height={630} priority />
 
-// Above-the-fold images: add `priority` to preload (improves LCP)
-// Below-the-fold: omit `priority` (lazy loaded by default)
+// Decorative image — empty alt, not missing alt
+<Image src="/divider.png" alt="" width={800} height={4} aria-hidden />
+
+// priority on above-the-fold images improves LCP
+// Omit priority below the fold (lazy loaded by default)
 ```
 
 ## JSON-LD in Next.js
 
 ```tsx
-// Inject via script tag in the page component or generateMetadata
+// JSON-LD is injected via a script tag in the page component.
+// It cannot be emitted from generateMetadata — that function only controls <head> meta elements.
 // App router — in the page component:
 export default function BlogPost({ post }) {
   const jsonLd = {

@@ -1,6 +1,6 @@
 # SEO Enhancer — Universal Instructions
 
-This file contains the full SEO audit and implementation logic. It is the canonical source used by all tool adapters.
+Standalone SEO audit and implementation instructions. Paste into any AI tool's system prompt or custom instructions.
 
 Compatible with: Claude Code, Cursor, GitHub Copilot, Windsurf, Cline, OpenAI Codex, and any AI coding assistant.
 
@@ -43,25 +43,24 @@ Infer scope from the request:
 
 ## Step 2 — Audit (tiered)
 
-**Critical** — fix immediately without asking:
-- Public page missing `<title>` or `meta description`
-- Next.js page/layout missing `metadata` export or `generateMetadata`
+**Critical** — must be fixed in this session (genuine indexing risk):
+- Public page missing `<title>` or `meta description` — and no ancestor layout providing coverage
+- Next.js page/layout missing `metadata` or `generateMetadata` with no inherited coverage from parent layout
 - Remix route missing `export const meta`
-- `<img>` tags with no `alt` attribute
-- No `robots.txt` in a production app
-- Missing canonical URL on pages with duplicate content risk
-- React SPA (no SSR) on an SEO-critical site with no crawlability warning
+- Informational `<img>` missing `alt` — decorative images with `alt=""` are correct, do not flag
+- Missing canonical URL on pages with real duplicate content risk (parameterized URLs, syndicated content)
+- React SPA on an SEO-critical public site with no acknowledgment of rendering risk
 - i18n site missing `hreflang` alternate links
 
 **Enhancement** — show recommendation + code example, ask before applying:
 - Missing Open Graph / Twitter card tags
 - Missing JSON-LD structured data
 - No sitemap
-- `next/head` used in app router (should use metadata API)
-- Raw `<img>` instead of `next/image` in Next.js
+- Missing `robots.txt` (crawl is allowed by default; absence is not a blocker)
+- `next/head` used in app router (native metadata API is preferred, not required)
 - Dynamic pages with hardcoded or missing SEO
 - `robots.txt` missing sitemap pointer
-- Paginated lists missing canonical handling
+- Paginated content with no canonical strategy
 
 ---
 
@@ -95,7 +94,7 @@ Framework: [Next.js / Remix / React SPA]
 ## Step 4 — Implement fixes
 
 - **Small fix** (one alt tag, one meta tag): edit directly
-- **Structural change** (adding `generateMetadata`, rewiring data flow): show diff, apply after confirmation
+- **Structural change** (adding `generateMetadata`, rewiring data flow): show diff first, then apply — no separate confirmation needed, just show what changes before writing it
 - **New files** (`sitemap.ts`, `robots.txt`): create directly
 
 Fix all critical issues. For enhancements, present example code and ask.
@@ -286,14 +285,15 @@ Rules: every locale links to all others (reciprocal), always include `x-default`
 
 ---
 
-## SPA crawlability warning
+## SPA rendering risk
 
 Show as **Critical** when: React SPA + no SSR + SEO-critical site:
 
 ```
 ⚠️  Crawlability Risk
-This is a client-side rendered SPA. Googlebot may not execute JavaScript,
-so meta tags via react-helmet-async may not be indexed.
+This is a client-side rendered SPA. Google does crawl and render JavaScript,
+but with meaningful caveats: rendering is deferred, resources are limited, and
+dynamic meta tags have weaker indexing guarantees than server-rendered HTML.
 
 Options:
   1. Migrate to Next.js (recommended)
@@ -340,7 +340,7 @@ Always check `package.json` first. Prefer native APIs over third-party deps.
 - [ ] JSON-LD present with correct schema type
 
 **Images**
-- [ ] All `<img>` have meaningful `alt` text
+- [ ] Informational `<img>` have descriptive `alt` text; decorative `<img>` have `alt=""`
 - [ ] `next/image` used in Next.js
 
 **Crawlability**

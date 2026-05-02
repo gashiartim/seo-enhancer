@@ -1,6 +1,6 @@
 # SEO Enhancer — Windsurf Rules
 
-> Copy this file contents into your project's `.windsurfules` file, or add to your global `~/.codeium/windsurf/memories/global_rules.md`.
+> Copy this file contents into your project's `.windsurfrules` file, or add to your global `~/.codeium/windsurf/memories/global_rules.md`.
 
 ## SEO rules for Next.js, Remix, and React SPAs
 
@@ -127,7 +127,7 @@ alternates: {
 - [ ] OG: title, description, image, url, type
 - [ ] Twitter card tags present
 - [ ] JSON-LD with correct schema
-- [ ] All `<img>` have meaningful `alt`
+- [ ] Informational `<img>` have descriptive `alt`; decorative `<img>` use `alt=""`
 - [ ] `sitemap.xml` linked in `robots.txt`
 - [ ] `robots.txt` not blocking public routes
 - [ ] hreflang on every locale (if i18n project)

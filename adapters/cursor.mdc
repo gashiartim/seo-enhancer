@@ -1,6 +1,6 @@
 ---
 description: SEO audit and implementation for Next.js, Remix, and React SPAs. Auto-attached to page components, route files, and layout files. Covers meta tags, Open Graph, Twitter cards, JSON-LD, sitemaps, robots.txt, i18n/hreflang, and image SEO.
-globs: app/**/*.tsx,app/**/*.ts,pages/**/*.tsx,pages/**/*.ts,app/routes/**/*.tsx,src/pages/**/*.tsx,src/components/**/*.tsx
+globs: app/**/*.tsx,app/**/*.ts,pages/**/*.tsx,pages/**/*.ts,app/routes/**/*.tsx,src/pages/**/*.tsx
 alwaysApply: false
 ---
 
@@ -156,7 +156,7 @@ import { Helmet } from 'react-helmet-async'
 </Helmet>
 ```
 
-**Always warn** on SEO-critical SPAs: react-helmet-async alone doesn't solve Googlebot crawlability. Recommend migrating to Next.js or Remix.
+**Always warn** on SEO-critical SPAs: Google renders JS but with deferred timing, limited resources, and weaker guarantees for dynamic meta tags. Server-side rendering (Next.js or Remix) is the reliable baseline.
 
 ---
 
@@ -204,7 +204,7 @@ Missing hreflang on an i18n site = **Critical** finding.
 - [ ] OG: `og:title`, `og:description`, `og:image`, `og:url`, `og:type`
 - [ ] Twitter: `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`
 - [ ] JSON-LD with correct schema type
-- [ ] All `<img>` have meaningful `alt`
+- [ ] Informational `<img>` have descriptive `alt`; decorative `<img>` have `alt=""`
 - [ ] `next/image` used in Next.js
 - [ ] `sitemap.xml` linked in `robots.txt`
 - [ ] `robots.txt` not blocking public routes

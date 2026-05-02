@@ -163,7 +163,7 @@ export function Page({ data }) {
 }
 ```
 
-**Critical warning for SEO-critical SPAs:** react-helmet-async does not solve Googlebot's inability to execute JavaScript. Recommend migrating to Next.js or Remix for full SEO control.
+**Warning for SEO-critical SPAs:** Google renders JS but with deferred timing, limited resources, and weaker guarantees for dynamic meta tags. react-helmet-async helps with social previews but does not eliminate the rendering reliability gap. Recommend Next.js or Remix for reliable server-rendered metadata.
 
 ### JSON-LD
 
@@ -216,7 +216,7 @@ Rules: every locale variant must link to all others (reciprocal). Always include
 - [ ] `og:title`, `og:description`, `og:image`, `og:url`, `og:type`
 - [ ] `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`
 - [ ] JSON-LD with correct schema type
-- [ ] All `<img>` have meaningful `alt` (not empty, not "image")
+- [ ] Informational `<img>` have descriptive `alt`; decorative `<img>` use `alt=""` (empty, not missing)
 - [ ] `next/image` used instead of `<img>` in Next.js
 - [ ] `sitemap.xml` exists and referenced in `robots.txt`
 - [ ] `robots.txt` exists and not blocking public routes
