@@ -177,3 +177,7 @@ Contributions welcome. The most valuable additions:
 ## License
 
 MIT
+
+---
+
+Made by [Artim Gashi](https://www.artimgashi.dev)
