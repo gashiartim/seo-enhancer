@@ -36,12 +36,12 @@ omc skill install seo-enhancer
 Clone this repo into your Claude skills directory:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/seo-enhancer-skill ~/.claude/skills/seo-enhancer
+git clone https://github.com/gashiartim/seo-enhancer ~/.claude/skills/seo-enhancer
 ```
 
 ### Option 3 — .skill file
 
-Download `seo-enhancer.skill` from the [releases page](../../releases) and run:
+Download `seo-enhancer.skill` from the [releases page](https://github.com/gashiartim/seo-enhancer/releases) and run:
 
 ```bash
 omc skill install ./seo-enhancer.skill
