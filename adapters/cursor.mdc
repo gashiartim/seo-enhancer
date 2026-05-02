@@ -1,0 +1,212 @@
+---
+description: SEO audit and implementation for Next.js, Remix, and React SPAs. Auto-attached to page components, route files, and layout files. Covers meta tags, Open Graph, Twitter cards, JSON-LD, sitemaps, robots.txt, i18n/hreflang, and image SEO.
+globs: app/**/*.tsx,app/**/*.ts,pages/**/*.tsx,pages/**/*.ts,app/routes/**/*.tsx,src/pages/**/*.tsx,src/components/**/*.tsx
+alwaysApply: false
+---
+
+# SEO Enhancer
+
+Audit and fix SEO for Next.js, Remix, and React SPAs.
+
+## Step 1 — Detect framework
+
+Read `package.json`:
+- `next` → Next.js (check for `app/` vs `pages/` directory)
+- `@remix-run/react` → Remix
+- `react` + `vite` or `react-scripts` → React SPA (no SSR)
+- `next-intl` / `next-i18next` / `[locale]` segments → i18n project, hreflang required
+
+## Step 2 — Audit (tiered)
+
+**Critical** — fix immediately:
+- Public page missing `<title>` or `meta description`
+- Next.js page/layout missing `metadata` export or `generateMetadata`
+- Remix route missing `export const meta`
+- `<img>` tags with no `alt`
+- No `robots.txt` in production
+- No canonical on pages with duplicate content risk
+- React SPA on SEO-critical site with no crawlability warning
+- i18n site missing `hreflang`
+
+**Enhancement** — show example, ask before applying:
+- Missing Open Graph / Twitter card tags
+- Missing JSON-LD structured data
+- No sitemap
+- `next/head` in app router (use metadata API instead)
+- Raw `<img>` instead of `next/image`
+- Dynamic pages with hardcoded/missing SEO
+- `robots.txt` missing sitemap pointer
+
+## Step 3 — Report
+
+Single file → inline findings only.
+Full site → write `seo-audit.md` at project root.
+
+## Step 4 — Implement
+
+- Small fix (one tag): edit directly
+- Structural change (adding `generateMetadata`, data wiring): show diff first
+- New files (`sitemap.ts`, `robots.txt`): create directly
+
+---
+
+## Next.js patterns
+
+**App router — static:**
+```tsx
+export const metadata: Metadata = {
+  title: 'Page Title | Site',
+  description: 'Description under 160 chars.',
+  alternates: { canonical: 'https://acme.com/page' },
+  openGraph: { title: '...', description: '...', images: [{ url: '...', width: 1200, height: 630 }] },
+  twitter: { card: 'summary_large_image' },
+}
+```
+
+**App router — dynamic:**
+```tsx
+export async function generateMetadata({ params }): Promise<Metadata> {
+  const post = await getPost(params.slug) // Next.js deduplicates this fetch
+  return {
+    title: post.title,
+    alternates: { canonical: `https://acme.com/blog/${params.slug}` },
+    openGraph: { title: post.title, type: 'article', images: [{ url: post.coverImage }] },
+  }
+}
+```
+
+**Root layout defaults:**
+```tsx
+export const metadata: Metadata = {
+  metadataBase: new URL('https://acme.com'),
+  title: { default: 'Site Name', template: '%s | Site Name' },
+  robots: { index: true, follow: true },
+}
+```
+
+**Sitemap:**
+```ts
+// app/sitemap.ts
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const posts = await getAllPosts()
+  return [
+    { url: 'https://acme.com', changeFrequency: 'daily', priority: 1 },
+    ...posts.map(p => ({ url: `https://acme.com/blog/${p.slug}`, lastModified: p.updatedAt })),
+  ]
+}
+```
+
+**robots.txt:**
+```ts
+// app/robots.ts
+export default function robots(): MetadataRoute.Robots {
+  return {
+    rules: { userAgent: '*', allow: '/', disallow: ['/admin/'] },
+    sitemap: 'https://acme.com/sitemap.xml',
+  }
+}
+```
+
+---
+
+## Remix patterns
+
+```tsx
+export const meta: MetaFunction<typeof loader> = ({ data, params }) => [
+  { title: `${data?.post.title} | Blog` },
+  { name: 'description', content: data?.post.excerpt },
+  { tagName: 'link', rel: 'canonical', href: `https://acme.com/blog/${params.slug}` },
+  { property: 'og:title', content: data?.post.title },
+  { property: 'og:type', content: 'article' },
+  { property: 'og:image', content: data?.post.coverImage },
+  { name: 'twitter:card', content: 'summary_large_image' },
+]
+```
+
+Sitemap via resource route:
+```tsx
+// app/routes/sitemap[.xml].tsx
+export async function loader({ request }) {
+  const base = new URL(request.url).origin
+  const posts = await getAllPosts()
+  const urls = posts.map(p => `<url><loc>${base}/blog/${p.slug}</loc></url>`)
+  return new Response(
+    `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.join('')}</urlset>`,
+    { headers: { 'Content-Type': 'application/xml' } }
+  )
+}
+```
+
+---
+
+## React SPA pattern
+
+```tsx
+// npm install react-helmet-async
+// Wrap root: <HelmetProvider><App /></HelmetProvider>
+import { Helmet } from 'react-helmet-async'
+
+<Helmet>
+  <title>{post.title} | Blog</title>
+  <meta name="description" content={post.excerpt} />
+  <link rel="canonical" href={`https://acme.com/blog/${post.slug}`} />
+  <meta property="og:title" content={post.title} />
+  <meta property="og:image" content={post.coverImage} />
+  <meta name="twitter:card" content="summary_large_image" />
+</Helmet>
+```
+
+**Always warn** on SEO-critical SPAs: react-helmet-async alone doesn't solve Googlebot crawlability. Recommend migrating to Next.js or Remix.
+
+---
+
+## JSON-LD schema detection
+
+| Route/component signal | Schema |
+|------------------------|--------|
+| `/blog/[slug]`, `BlogPost` | `Article` |
+| `/products/[id]`, `product.name` | `Product` |
+| `/faq`, accordion Q&A | `FAQPage` |
+| `/`, root layout | `Organization` + `WebSite` |
+| `/about`, `/contact` | `WebPage` + `Organization` |
+| `/events/[id]` | `Event` |
+| Ambiguous | Ask the user |
+
+Inject via `<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />`.
+
+---
+
+## i18n SEO
+
+When `next-intl`, `[locale]` routing, or similar is detected — add hreflang to every public page:
+
+```tsx
+alternates: {
+  canonical: `https://acme.com/${params.locale}/blog/${params.slug}`,
+  languages: {
+    'x-default': `https://acme.com/en/blog/${params.slug}`,
+    en: `https://acme.com/en/blog/${params.slug}`,
+    fr: `https://acme.com/fr/blog/${params.slug}`,
+  },
+},
+```
+
+Missing hreflang on an i18n site = **Critical** finding.
+
+---
+
+## Checklist
+
+- [ ] `<title>` unique, under 60 chars
+- [ ] `meta description` under 160 chars
+- [ ] `canonical` on duplicate-content pages
+- [ ] `robots` not accidentally `noindex`
+- [ ] OG: `og:title`, `og:description`, `og:image`, `og:url`, `og:type`
+- [ ] Twitter: `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`
+- [ ] JSON-LD with correct schema type
+- [ ] All `<img>` have meaningful `alt`
+- [ ] `next/image` used in Next.js
+- [ ] `sitemap.xml` linked in `robots.txt`
+- [ ] `robots.txt` not blocking public routes
+- [ ] hreflang on every locale (if i18n)
+- [ ] Page 1 canonical clean (if paginated)

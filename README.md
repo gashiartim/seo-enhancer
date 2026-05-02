@@ -1,6 +1,6 @@
 # seo-enhancer
 
-A Claude Code skill that audits and fixes SEO in **Next.js**, **Remix**, and **React SPA** projects.
+An SEO audit and implementation assistant for **Next.js**, **Remix**, and **React SPA** projects. Works with Claude Code, Cursor, GitHub Copilot, Windsurf, Cline, OpenAI Codex, and any AI coding tool.
 
 ## What it does
 
@@ -23,35 +23,95 @@ A Claude Code skill that audits and fixes SEO in **Next.js**, **Remix**, and **R
 
 ---
 
-## Install
+## Setup by tool
 
-### Option 1 — oh-my-claudecode
+### Claude Code (oh-my-claudecode)
 
 ```bash
 omc skill install seo-enhancer
 ```
 
-### Option 2 — Manual
-
-Clone this repo into your Claude skills directory:
+Or clone manually:
 
 ```bash
 git clone https://github.com/gashiartim/seo-enhancer ~/.claude/skills/seo-enhancer
 ```
 
-### Option 3 — .skill file
-
-Download `seo-enhancer.skill` from the [releases page](https://github.com/gashiartim/seo-enhancer/releases) and run:
+Or download `seo-enhancer.skill` from the [releases page](https://github.com/gashiartim/seo-enhancer/releases) and run:
 
 ```bash
 omc skill install ./seo-enhancer.skill
 ```
 
+The skill triggers automatically when you mention SEO or open a page file missing metadata.
+
+---
+
+### Cursor
+
+Copy `adapters/cursor.mdc` into your project:
+
+```bash
+mkdir -p .cursor/rules
+cp adapters/cursor.mdc .cursor/rules/seo-enhancer.mdc
+```
+
+The rule auto-attaches to page, route, and layout files and triggers on SEO-related prompts.
+
+---
+
+### GitHub Copilot
+
+Copy `adapters/copilot.md` into your project:
+
+```bash
+mkdir -p .github
+cp adapters/copilot.md .github/copilot-instructions.md
+```
+
+---
+
+### Windsurf
+
+Copy `adapters/windsurf.md` contents into your project's `.windsurfules`:
+
+```bash
+cp adapters/windsurf.md .windsurfules
+```
+
+Or append to your global rules at `~/.codeium/windsurf/memories/global_rules.md`.
+
+---
+
+### Cline
+
+Copy `adapters/cline.md` into your project:
+
+```bash
+cp adapters/cline.md .clinerules
+```
+
+---
+
+### OpenAI Codex / AGENTS.md
+
+Copy `adapters/agents.md` into your project root:
+
+```bash
+cp adapters/agents.md AGENTS.md
+```
+
+---
+
+### Any other AI tool
+
+Copy `INSTRUCTIONS.md` into your project root or paste its contents into your tool's system prompt / custom instructions.
+
 ---
 
 ## Usage
 
-The skill triggers automatically. Just describe what you need:
+Once set up, just describe what you need:
 
 ```
 Audit the SEO on my homepage
@@ -62,8 +122,6 @@ Set up a sitemap for my Next.js app
 My social previews are broken
 Add hreflang to my i18n site
 ```
-
-Or open any Next.js/Remix page file and Claude will proactively flag missing metadata.
 
 ---
 
@@ -126,7 +184,14 @@ Detects locale routing, adds `alternates.languages` with `x-default` to `generat
 
 ```
 seo-enhancer/
-├── SKILL.md                    — main skill logic and checklist
+├── INSTRUCTIONS.md             — universal instructions (any AI tool)
+├── SKILL.md                    — Claude Code skill (oh-my-claudecode)
+├── adapters/
+│   ├── cursor.mdc              — Cursor rules (.cursor/rules/)
+│   ├── copilot.md              — GitHub Copilot (.github/copilot-instructions.md)
+│   ├── windsurf.md             — Windsurf (.windsurfules)
+│   ├── cline.md                — Cline (.clinerules)
+│   └── agents.md               — OpenAI Codex / AGENTS.md
 └── references/
     ├── nextjs.md               — Next.js patterns (app router, pages router, sitemap)
     ├── remix.md                — Remix meta export, loader-driven metadata, resource routes
@@ -141,22 +206,17 @@ seo-enhancer/
 
 Contributions welcome. The most valuable additions:
 
-- **Vue / Nuxt support** — add `references/nuxt.md` with Nuxt's `useHead` / `useSeoMeta` patterns and update the framework detection in `SKILL.md`
-- **Gatsby support** — add `references/gatsby.md` with `gatsby-plugin-react-helmet` or Gatsby Head API patterns
+- **Vue / Nuxt support** — add `references/nuxt.md` + `adapters/` variant, update framework detection
+- **Gatsby support** — add `references/gatsby.md` with Gatsby Head API patterns
 - **New JSON-LD schemas** — add templates to `references/json-ld-schemas.md` (Course, JobPosting, Review, etc.)
-- **Edge cases and fixes** — open an issue or PR
-
-### How skills work
-
-A skill is a markdown file (`SKILL.md`) with YAML frontmatter that Claude Code loads into context. The `description` field controls when it triggers. Reference files in `references/` are loaded on demand. See the [oh-my-claudecode docs](https://github.com/oh-my-claudecode/oh-my-claudecode) for the full skill authoring guide.
+- **New tool adapters** — add to `adapters/` following the existing format
 
 ### Adding a new framework
 
 1. Add `references/<framework>.md` with implementation patterns
-2. Update the framework detection table in `SKILL.md` → Step 1
-3. Add the framework to the `description` frontmatter
-4. Add a row to the Library Selection table
-5. Update the coverage table in this README
+2. Update framework detection in `SKILL.md` → Step 1 and `INSTRUCTIONS.md`
+3. Update all adapter files with the new framework's patterns
+4. Update the coverage table in this README
 
 ---
 
