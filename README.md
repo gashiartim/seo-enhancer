@@ -23,89 +23,43 @@ An SEO audit and implementation assistant for **Next.js**, **Remix**, and **Reac
 
 ---
 
-## Setup by tool
+## Install
 
-### Claude Code (oh-my-claudecode)
+### Universal (all tools)
 
 ```bash
-omc skill install seo-enhancer
+npx skills add gashiartim/seo-enhancer
 ```
 
-Or clone manually:
+The `skills` CLI auto-detects your AI tools (Claude Code, Cursor, Windsurf, Cline, Copilot, Codex, and more) and installs to the right place for each. Works globally or per-project.
+
+Install globally for all your projects:
 
 ```bash
-git clone https://github.com/gashiartim/seo-enhancer ~/.claude/skills/seo-enhancer
+npx skills add gashiartim/seo-enhancer -g
 ```
 
-Or download `seo-enhancer.skill` from the [releases page](https://github.com/gashiartim/seo-enhancer/releases) and run:
+Install for specific agents only:
 
 ```bash
-omc skill install ./seo-enhancer.skill
-```
-
-The skill triggers automatically when you mention SEO or open a page file missing metadata.
-
----
-
-### Cursor
-
-Copy `adapters/cursor.mdc` into your project:
-
-```bash
-mkdir -p .cursor/rules
-cp adapters/cursor.mdc .cursor/rules/seo-enhancer.mdc
-```
-
-The rule auto-attaches to page, route, and layout files and triggers on SEO-related prompts.
-
----
-
-### GitHub Copilot
-
-Copy `adapters/copilot.md` into your project:
-
-```bash
-mkdir -p .github
-cp adapters/copilot.md .github/copilot-instructions.md
+npx skills add gashiartim/seo-enhancer --agent claude-code cursor windsurf
 ```
 
 ---
 
-### Windsurf
+### Manual setup by tool
 
-Copy `adapters/windsurf.md` contents into your project's `.windsurfules`:
+If you prefer to install manually, copy the adapter file for your tool:
 
-```bash
-cp adapters/windsurf.md .windsurfules
-```
-
-Or append to your global rules at `~/.codeium/windsurf/memories/global_rules.md`.
-
----
-
-### Cline
-
-Copy `adapters/cline.md` into your project:
-
-```bash
-cp adapters/cline.md .clinerules
-```
-
----
-
-### OpenAI Codex / AGENTS.md
-
-Copy `adapters/agents.md` into your project root:
-
-```bash
-cp adapters/agents.md AGENTS.md
-```
-
----
-
-### Any other AI tool
-
-Copy `INSTRUCTIONS.md` into your project root or paste its contents into your tool's system prompt / custom instructions.
+| Tool | File | Destination |
+|------|------|-------------|
+| Claude Code (omc) | `SKILL.md` | `~/.claude/skills/seo-enhancer/` |
+| Cursor | `adapters/cursor.mdc` | `.cursor/rules/seo-enhancer.mdc` |
+| GitHub Copilot | `adapters/copilot.md` | `.github/copilot-instructions.md` |
+| Windsurf | `adapters/windsurf.md` | `.windsurfrules` |
+| Cline | `adapters/cline.md` | `.clinerules` |
+| Codex / AGENTS.md | `adapters/agents.md` | `AGENTS.md` |
+| Any other tool | `INSTRUCTIONS.md` | paste into system prompt |
 
 ---
 
